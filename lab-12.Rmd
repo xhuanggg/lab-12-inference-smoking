@@ -1,27 +1,109 @@
 ---
 title: "Lab 12 - Smoking during pregnancy"
-author: "Insert your name here"
-date: "Insert date here"
+author: "Thomas Huang"
+date: "2026-04-13"
 output: github_document
 ---
+
+# This is my 11th lab. But I choose Lab 12 as my 11th lab.
 
 ### Load packages and data
 
 ```{r load-packages, message=FALSE}
-library(tidyverse) 
-library(tidymodels)
+library(tidyverse)
+library(infer)
 library(openintro)
 ```
 
 ### Exercise 1
 
-Remove this text, and add your answer for Exercise 1 here.
-Add code chunks as needed.
-Don't forget to label your code chunk.
-Do not use spaces in code chunk labels.
+Numeric variables are fage, mage, weeks, visits, gained, and weight.
+```{r}
+data(ncbirths)
+
+glimpse(ncbirths)
+
+hist(ncbirths$fage)
+hist(ncbirths$mage)
+hist(ncbirths$weeks)
+hist(ncbirths$visits) #Seems to be an outlier / outliers.
+hist(ncbirths$gained)
+hist(ncbirths$weight)
+```
 
 ### Exercise 2
 
-...
+```{r}
+ncbirths_white <- ncbirths %>% 
+  filter(whitemom == "white")
+```
 
-Add exercise headings as needed.
+### Exercise 3
+
+The observations should be mostly independent of each other because a mother is unlikely to give birth to multiple babies in 2004.
+The sample size is 714. It's reasonably large.
+The shape of the distribution looks normal.
+```{r}
+glimpse(ncbirths_white)
+hist(ncbirths_white$weight)
+```
+
+### Exercise 4
+
+```{r}
+# Generate bootstrapped mean
+ncbirths_white_boot <- ncbirths_white %>%
+  specify(response = weight) %>% 
+  generate(reps = 15000, type = "bootstrap") %>% 
+  calculate(stat = "mean")
+
+# Recenter the mean
+ncbirths_white_boot$stat_centered <- ncbirths_white_boot$stat - mean(ncbirths_white_boot$stat, na.rm = TRUE) + 7.43
+
+# Figure
+ggplot(ncbirths_white_boot, aes(x = stat_centered)) +
+  geom_histogram(fill = "skyblue", color = "black") +
+  geom_vline(xintercept = 7.43, linetype = "dashed", color = "red")
+
+# Two-tailed p
+F <- ecdf(ncbirths_white_boot$stat_centered)
+p_val <- 2*min(F(7.43), 1-F(7.43))
+p_val
+
+# Interpretation
+# Birth weight has not changed since 1995, p = .992.
+```
+
+### Exercise 5
+
+Weight distribution is more centered and compact among nonsmokers. Both distributions are left skewed.
+```{r}
+ncbirths_r <- ncbirths %>% 
+   filter(!is.na(habit))
+
+ggplot(ncbirths_r, aes(x = weight)) +
+  geom_histogram() +
+  facet_wrap(~habit, ncol = 2) 
+```
+
+### Exercise 6
+
+First, group summaries for an NA group don't make sense. Second, NAs in weight may cause errors when calculating group summaries (which needs something like na.omit() to fix).
+```{r}
+ncbirths_clean <- ncbirths %>% 
+   filter(!is.na(habit), !is.na(weight))
+```
+
+### Exercise 7
+
+This difference itself is not meaningful. It is not enough for inference.
+```{r}
+diff <- ncbirths_clean %>%
+  group_by(habit) %>%
+  summarize(mean_weight = mean(weight)) %>%
+  summarize(diff = mean_weight[habit == "nonsmoker"] -
+                   mean_weight[habit == "smoker"]) %>% 
+  pull(diff)
+```
+
+
