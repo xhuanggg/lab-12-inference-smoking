@@ -118,6 +118,8 @@ hist(ncbirths_white$weight)
 ### Exercise 4
 
 ``` r
+set.seed(123)
+
 # Generate bootstrapped mean
 ncbirths_white_boot <- ncbirths_white %>%
   specify(response = weight) %>% 
@@ -144,7 +146,7 @@ p_val <- 2*min(F(7.43), 1-F(7.43))
 p_val
 ```
 
-    ## [1] 0.9968
+    ## [1] 0.9962667
 
 ``` r
 # Interpretation
@@ -193,3 +195,60 @@ diff <- ncbirths_clean %>%
                    mean_weight[habit == "smoker"]) %>% 
   pull(diff)
 ```
+
+### Exercise 8
+
+$H_0$: The average birth weights of the two groups are the same.
+Alternatively, $\mu_{Smoker}=\mu_{NonSmoker}$. $H_1$: The average birth
+weights of the two groups are different. Alternatively,
+$\mu_{Smoker} \neq \mu_{NonSmoker}$.
+
+### Exercise 9
+
+Permutation is my choice. This time I’m comparing the esimates of two
+groups by first assuming the effect is 0 (null). Permutation better fits
+this idea.
+
+``` r
+set.seed(123)
+
+diffs <- replicate(5000, {
+  shuffled <- ncbirths_clean %>%
+    mutate(habit = sample(habit))  
+  
+  shuffled %>%
+    group_by(habit) %>%
+    summarize(m = mean(weight), .groups = "drop") %>%
+    summarize(perm.diff = m[habit == "nonsmoker"] -
+                     m[habit == "smoker"]) %>%
+    pull(perm.diff)
+})
+
+F <- ecdf(diffs)
+p <- 2 * min(F(diff), 1 - F(diff))
+p
+```
+
+    ## [1] 0.0336
+
+``` r
+# p = .0336. The smnoker group is associated with lower average birth weight.
+```
+
+### Exercise 10
+
+# The 95% CI does not include 0. This indicates the difference between the two groups is statistically significant.
+
+``` r
+diff_boot <- ncbirths_clean %>%
+  specify(response = weight, explanatory = habit) %>% 
+  generate(reps = 15000, type = "bootstrap") %>% 
+  calculate(stat = "diff in means", order = c("nonsmoker", "smoker"))
+
+get_confidence_interval(diff_boot, level = 0.95, type = "percentile")
+```
+
+    ## # A tibble: 1 × 2
+    ##   lower_ci upper_ci
+    ##      <dbl>    <dbl>
+    ## 1   0.0591    0.584
