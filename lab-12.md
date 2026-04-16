@@ -252,3 +252,77 @@ get_confidence_interval(diff_boot, level = 0.95, type = "percentile")
     ##   lower_ci upper_ci
     ##      <dbl>    <dbl>
     ## 1   0.0591    0.584
+
+### Exercise 11
+
+By looking at the minimum and maximum in each group, the cutoff is 35.
+Those who are 34 or below are considered as younger mom. And those who
+are 35 or above are considered as mature mom.
+
+``` r
+psych::describeBy(ncbirths$mage, ncbirths$mature)
+```
+
+    ## 
+    ##  Descriptive statistics by group 
+    ## group: mature mom
+    ##    vars   n  mean   sd median trimmed  mad min max range skew kurtosis   se
+    ## X1    1 133 37.18 2.43     37   36.79 1.48  35  50    15 1.98     5.85 0.21
+    ## ------------------------------------------------------------ 
+    ## group: younger mom
+    ##    vars   n  mean   sd median trimmed  mad min max range skew kurtosis   se
+    ## X1    1 867 25.44 5.03     25   25.44 5.93  13  34    21 0.01    -1.03 0.17
+
+### Exercise 12
+
+$H_0$: The proportions of low birth weight baby are the same among
+younger and mature moms. In other words, $p_{Younger} = p_{Mature}$.
+$H_1$: The proportions of low birth weight baby are not the same among
+younger and mature moms. In other words, $p_{Younger} \neq p_{Mature}$.
+
+The conditions for simulation-based inference are met here. The data
+points are IID. The sample size is reasonably large.
+
+I choose bootstrapping.
+
+The 95% CI includes zero.
+
+$p = .0379$. The proportions of low birth weight babies are not
+significantly different across mother’s maturity groups.
+
+``` r
+ncbirths_clean <- ncbirths %>% 
+   filter(!is.na(lowbirthweight), !is.na(mature))
+
+prop_boot <- ncbirths_clean %>%
+  specify(lowbirthweight ~ mature, success = "low") %>%
+  generate(reps = 15000, type = "bootstrap") %>%
+  calculate(stat = "diff in props", order = c("mature mom", "younger mom"))
+
+props <- prop_boot %>% 
+  pull(stat)
+
+F <- ecdf(props)
+p <- 2 * min(F(0), 1 - F(0))
+p
+```
+
+    ## [1] 0.3790667
+
+### Exercise 13
+
+The bounds mean the difference is not significant at $\alpha = .05$
+because 0 is included in the 95% CI.
+
+The CI tells that, if we resample from the population repeatedly and
+calculate the CIs in the same way as we did here, 95% of the CIs will
+include the true population parameter
+
+``` r
+get_confidence_interval(prop_boot, level = 0.95, type = "percentile")
+```
+
+    ## # A tibble: 1 × 2
+    ##   lower_ci upper_ci
+    ##      <dbl>    <dbl>
+    ## 1  -0.0312   0.0910
