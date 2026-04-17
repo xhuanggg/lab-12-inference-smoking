@@ -232,7 +232,7 @@ p
     ## [1] 0.0336
 
 ``` r
-# p = .0336. The smnoker group is associated with lower average birth weight.
+# p = .0336. The smoker group is associated with lower average birth weight.
 ```
 
 ### Exercise 10

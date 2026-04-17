@@ -133,7 +133,7 @@ diffs <- replicate(5000, {
 F <- ecdf(diffs)
 p <- 2 * min(F(diff), 1 - F(diff))
 p
-# p = .0336. The smnoker group is associated with lower average birth weight.
+# p = .0336. The smoker group is associated with lower average birth weight.
 ```
 
 ### Exercise 10
